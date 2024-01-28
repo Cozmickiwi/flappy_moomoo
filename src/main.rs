@@ -21,10 +21,22 @@ fn main() {
         upper_y: 180,
         falling: true,
     };
+    let mut jump_prog: u8 = 0;
     while apt.main_loop() {
         hid.scan_input();
         if hid.keys_down().contains(KeyPad::START) {
             break;
+        }
+        if hid.keys_down().contains(KeyPad::A) {
+            moomoo.falling = false;
+            jump_prog = 0;
+        }
+        if !moomoo.falling {
+            jump_prog += 1;
+            if jump_prog >= 15 {
+                moomoo.falling = true;
+                jump_prog = 0;
+            }
         }
         movement(&mut moomoo);
         {
