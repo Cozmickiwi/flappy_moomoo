@@ -3,6 +3,15 @@ use ctru::{
     services::gfx::{Flush, RawFrameBuffer, Screen, Swap},
 };
 
+struct FLAPPER {
+    y_pos: u8,
+    upper_y: u8,
+    falling: bool,
+}
+
+const MOOMOO_HEIGHT: u8 = 30;
+const MOOMOO_WIDTH: u8 = 30;
+
 fn main() {
     let apt = Apt::new().unwrap();
     let mut hid = Hid::new().unwrap();
@@ -11,14 +20,19 @@ fn main() {
     top_screen.swap_buffers();
     let frame_buffer = top_screen.raw_framebuffer();
     //    let mut old_keys = KeyPad::empty();
-    draw_filled_square(frame_buffer, 300, 100, 50, 15);
     top_screen.flush_buffers();
     top_screen.swap_buffers();
+    let mut moomoo = FLAPPER {
+        y_pos: 150,
+        upper_y: 180,
+        falling: true,
+    };
     while apt.main_loop() {
         hid.scan_input();
         if hid.keys_down().contains(KeyPad::START) {
             break;
         }
+        draw_filled_square(&frame_buffer, 300, 100, 50, 15, SQUARE_COLOR, true);
         gfx.wait_for_vblank();
     }
 }
@@ -28,8 +42,13 @@ const SQUARE_COLOR_G: u8 = 0;
 const SQUARE_COLOR_B: u8 = 0;
 
 static SQUARE_COLOR: [u8; 3] = [SQUARE_COLOR_B, SQUARE_COLOR_G, SQUARE_COLOR_R];
+static BLANK: [u8; 3] = [0, 0, 0];
 
-fn draw_filled_square(frame_buffer: RawFrameBuffer<'_>, x: u32, y: u32, width: u32, height: u32) {
+
+fn draw_filled_square(frame_buffer: &RawFrameBuffer<'_>, x: u32, y: u32, width: u32, height: u32, color: [u8;3], refresh: bool) {
+    if refresh {
+        draw_filled_square(&frame_buffer, 0, 0, 400, 240, BLANK, false);
+    }
     let frame_buffer_slice = unsafe {
         std::slice::from_raw_parts_mut(
             frame_buffer.ptr,
@@ -46,4 +65,15 @@ fn draw_filled_square(frame_buffer: RawFrameBuffer<'_>, x: u32, y: u32, width: u
             }
         }
     }
+}
+
+fn movement(mut moomoo: FLAPPER) -> FLAPPER {
+    if moomoo.falling {
+        moomoo.y_pos -= 1;
+        moomoo.upper_y -= 1;
+    } else if moomoo.upper_y < 235 {
+        moomoo.y_pos += 2;
+        moomoo.upper_y += 2;
+    }
+    return moomoo;
 }
